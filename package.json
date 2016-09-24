@@ -65,7 +65,8 @@
   },
   "dependencies": {
     "babel-runtime": "^6.11.6",
-    "redux-actions": "^0.10.1"
+    "redux-actions": "^0.10.1",
+    "shallowequal": "0.2.2"
   },
   "jest": {
     "automock": false,

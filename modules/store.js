@@ -1,5 +1,4 @@
 import { createAction, handleActions } from 'redux-actions';
-import { getMutableState, getImmutableState } from './helpers/state';
 
 export const clearKey = createAction('@redux-conn/CLEAR');
 export const beginGlobalLoad = createAction('@redux-conn/BEGIN_GLOBAL_LOAD');
@@ -13,80 +12,58 @@ const initialState = {
   loadState: {},
 };
 
-export const reducer = handleActions({
-  [beginGlobalLoad]: (state) => ({
-    ...state,
-    loaded: false,
-  }),
+export default function reducerCreator({ setIn, updateIn, fromJS, merge }) {
+  return handleActions({
+    [beginGlobalLoad]: (state) => setIn(state, 'loaded', false),
 
-  [endGlobalLoad]: (state) => ({
-    ...state,
-    loaded: true,
-  }),
+    [endGlobalLoad]: (state) => setIn(state, 'loaded', true),
 
-  [load]: (state, { payload }) => ({
-    ...state,
-    loadState: {
-      ...state.loadState,
-      [payload.key]: {
-        loading: true,
-        loaded: false,
-      },
+    [load]: (state, { payload }) => updateIn(state, 'loadState',
+      (value) => merge(value, fromJS({
+        [payload.key]: {
+          loading: true,
+          loaded: false,
+        },
+      }))
+    ),
+
+    [loadSuccess]: (state, { payload: { key, data } }) => {
+      let newState = setIn(state, key, fromJS(data));
+      newState = updateIn(newState, 'loadState',
+        (value) => merge(value, fromJS({
+          [key]: {
+            loading: false,
+            loaded: true,
+            error: null,
+          },
+        }))
+      );
+      return newState;
     },
-  }),
 
-  [loadSuccess]: (state, { payload: { key, data } }) => ({
-    ...state,
-    loadState: {
-      ...state.loadState,
-      [key]: {
-        loading: false,
-        loaded: true,
-        error: null,
-      },
+    [loadFail]: (state, { payload: { key, error } }) => updateIn(state, 'loadState',
+      (value) => merge(value, fromJS({
+        [key]: {
+          loading: false,
+          loaded: false,
+          error,
+        },
+      }))
+    ),
+
+    [clearKey]: (state, { payload }) => {
+      let newState = setIn(state, payload, null);
+      newState = updateIn(newState, 'loadState',
+        (value) => merge(value, fromJS({
+          [payload]: {
+            loading: false,
+            loaded: false,
+            error: null,
+          },
+        }))
+      );
+      return newState;
     },
-    [key]: data,
-  }),
 
-  [loadFail]: (state, { payload: { key, error } }) => ({
-    ...state,
-    loadState: {
-      ...state.loadState,
-      [key]: {
-        loading: false,
-        loaded: false,
-        error,
-      },
-    },
-  }),
-
-  [clearKey]: (state, { payload }) => ({
-    ...state,
-    loadState: {
-      ...state.loadState,
-      [payload]: {
-        loading: false,
-        loaded: false,
-        error: null,
-      },
-    },
-    [payload]: null,
-  }),
-
-}, initialState);
-
-export const immutableReducer = function wrapReducer(immutableState, action) {
-  // We need to convert immutable state to mutable state before our reducer can act upon it
-  let mutableState;
-  if (immutableState === undefined) {
-    // if state is undefined (no initial state yet) then we can't convert it, so let the
-    // reducer set the initial state for us
-    mutableState = immutableState;
-  } else {
-    // Convert immutable state to mutable state so our reducer will accept it
-    mutableState = getMutableState(immutableState);
-  }
-
-  // Run the reducer and then re-convert the mutable output state back to immutable state
-  return getImmutableState(reducer(mutableState, action));
-};
+  }, initialState);
+}

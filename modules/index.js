@@ -1,5 +1,14 @@
-export ReduxAsyncConnect from './containers/AsyncConnect';
-export { asyncConnect } from './containers/decorator';
-export { loadOnServer } from './helpers/utils';
-export { reducer, immutableReducer } from './store';
-export { setToImmutableStateFunc, setToMutableStateFunc } from './helpers/state';
+import structure from './structure/plain';
+import componentContainer from './containers/AsyncConnect';
+import { asyncConnect } from './containers/decorator';
+import { loadOnServer } from './helpers/utils';
+import reducer from './store';
+// export { reducer, immutableReducer } from './store';
+// export { setToImmutableStateFunc, setToMutableStateFunc } from './helpers/state';
+
+export default {
+  ReduxAsyncConnect: componentContainer(structure),
+  asyncConnect,
+  loadOnServer,
+  reducer,
+};
